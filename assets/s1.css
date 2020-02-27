@@ -44,6 +44,29 @@
   padding: 0 20px;
   box-sizing: border-box;
 }
+
+.container_title {
+  margin-top: 0;
+  margin-bottom: 0.2em;
+  font-size: 2.6rem;
+  line-height: 2.6rem;
+}
+
+.container_title {
+  margin-top: 0;
+  margin-bottom: 0.2em;
+  font-size: 2.6rem;
+  line-height: 2.6rem;
+}
+
+.aboutme_title {
+  margin-top: 0;
+  margin-bottom: 0.2em;
+  font-size: 2rem;
+  line-height: 2rem;
+}
+
+
 .column,
 .columns {
   width: 100%;
@@ -339,6 +362,23 @@ input[type="button"].button-primary:focus {
   border-color: #1eaedb;
 }
 
+/* Special purpose buttons
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.reset-button {
+  width: 100%;
+  margin-top: 10px;
+  height: 30px;
+  line-height: 30px;
+}
+
+.info-icon {
+  float: right;
+  cursor: pointer;
+  height: 2.2rem;
+  width: 2.2rem;
+  margin: 0.2rem;
+}
+
 /* Forms
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 input[type="email"],
@@ -628,4 +668,42 @@ there.
 
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {
+}
+
+/* Modal info layer
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.modal {
+    position: fixed;
+    z-index: 1002; /* Sit on top, including modebar which has z=1001 */
+    left: 0;
+    bottom: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    background-color: rgba(0, 0, 0, 0.6); /* Black w/ opacity */
+}
+
+.modal-content {
+    z-index: 1004; /* Sit on top, including modebar which has z=1001 */
+    position: fixed;
+    left: 0;
+    width: 60%;
+    background-color: #3949ab;  /* Material indigo 600 */
+    color: white;
+    border-radius: 5px;
+    margin-left: 20%;
+    margin-bottom: 2%;
+    margin-top: 2%;
+}
+
+.modal-content > div {
+    text-align: left;
+    margin: 15px;
+}
+
+.modal-content.bottom {
+    bottom: 0;
+}
+
+.modal-content.top {
+    top: 0;
 }
