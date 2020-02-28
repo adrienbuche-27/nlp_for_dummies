@@ -60,10 +60,11 @@
 }
 
 .aboutme_title {
-  margin-top: 0;
-  margin-bottom: 0.2em;
-  font-size: 2rem;
-  line-height: 2rem;
+  margin: 0;
+  padding: 10px;
+  padding-bottom: 0px;
+  margin-bottom: 10px;
+  width: calc(100%-40px);
 }
 
 
@@ -631,6 +632,7 @@ there.
     padding: 15px;
     position: relative;
     box-shadow: 2px 2px 2px lightgrey;
+    font-weight: bold;
   }
   #plotly-image {
     margin-bottom: 0px !important;
