@@ -2,8 +2,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 
-# from nltk.book import * # In order to use FreqDist in most_frequent_token method
-
+from nltk.book import FreqDist
 
 def build_modal_info_overlay(id, title, side, content):
     """
@@ -43,11 +42,10 @@ def build_modal_info_overlay(id, title, side, content):
 def longuest_token(tokens):
 	maxlen = max(len(word) for word in tokens)
 	longuest = """Length : {} letters \n\n""".format(maxlen) + ", ".join(list(set([word for word in tokens if len(word) == maxlen])))
-	print(longuest)
 	return longuest
 
 
-# def most_frequent_token(tokens):
-# 	fdist1 = FreqDist(tokens)
-# 	most = fdist1.most_common(1)[0]
-# 	return ' : '.join([most[0], str(most[1])])
+def most_frequent_token(tokens):
+	fdist1 = FreqDist(tokens)
+	most = fdist1.most_common(1)[0]
+	return ' : '.join([most[0], str(most[1])])

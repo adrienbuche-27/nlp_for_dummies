@@ -5,15 +5,18 @@ import io
 import copy
 import pathlib
 import dash
+import dash_table
 import math
 import datetime as dt
 import pandas as pd
 from dash.dependencies import Input, Output, State, ClientsideFunction
 import dash_core_components as dcc
 import dash_html_components as html
+from dash.exceptions import PreventUpdate
+
 import nltk.data
 import nltk.tokenize
-# from nltk.book import *
+from nltk.book import FreqDist
 
 from extra_info import *
 from helpers import *
@@ -30,11 +33,12 @@ server = app.server
 # Create app layout
 app.layout = html.Div(
     [
+    dcc.Store(id='memory-output'),
     html.Div(children=[
       build_modal_info_overlay('about', 'Info', 'top', about_app),
       build_modal_info_overlay('input', 'Input Box', 'top', input_text)
       ]
-      ),
+    ),
     html.Div(
         [
         html.Div(
@@ -81,7 +85,7 @@ app.layout = html.Div(
         ],
         id="header",
         className="row flex-display",
-        style={"margin-bottom": "25px"},
+        style={"margin-bottom": "25px", "height" : "8vh"},
         ),
     html.Div(
        [
@@ -117,32 +121,37 @@ app.layout = html.Div(
     ),
     html.Div(
        [
-       html.Div(
-        id='result-input',
-        style = {"height" : "20vh", "overflow-y": "scroll"},
-        className="pretty_container twelve columns",)
-       ], className="row flex-display", style={'zIndex':9},
+       dcc.Loading(
+        html.Div(
+            id='result-input',
+            style = {"height" : "25vh", "overflow-y": "scroll"},
+            className="pretty_container twelve columns"
+            ),
+        type = 'default',
+        style = {"padding": "125px", "height" : "25vh"},
+        className='pretty_container twelve columns'
+        )], className="row flex-display", style={'zIndex':9},
        ),
     html.Div(
        [
        html.Div(
-         [html.P("No. of Words"), html.H6(id="result-input-words")],
+         [html.P("No. of Words"), dcc.Loading(html.H1(id="result-input-words"), style = {"padding": "25px"})],
          id="words",
          className="mini_container three columns",
          ),
        html.Div(
-         [html.P("No. of Sentences"), html.H6(id="result-input-sents"), ],
+         [html.P("No. of Sentences"), dcc.Loading(html.H1(id="result-input-sents"), style = {"padding": "25px"})],
          id="sentences",
          className="mini_container three columns",
          ),
        html.Div(
-         [html.P("Longuest Word(s)"), html.Div(id="result-input-long")],
+         [html.P("Longuest Word(s)"), dcc.Loading(html.H3(id="result-input-long"), style = {"padding": "25px"})],
          id="longuest",
          style = {"width" : "fixed", "height" : "18vh",  "overflow-y": "scroll", "overflow-x": "scroll"},
          className="mini_container four columns",
          ),
        html.Div(
-         [html.P("Most Frequent Word"), html.H6(id="result-input-frequent")],
+         [html.P("Most Frequent Word"), dcc.Loading(html.H3(id="result-input-frequent"), style = {"padding": "25px"})],
          id="frequent",
          style = {"width" : "fixed", "overflow-y": "scroll", "overflow-x": "scroll"},
          className="mini_container four columns",
@@ -189,6 +198,7 @@ for id in ['about', 'input']:
         else:
             return {"display": "none"}, {'zIndex': 10}
 
+
 @app.callback(Output('type_of_input_option', 'children'),
     [Input('type_of_input', 'value')])
 def display_input_option(value):
@@ -215,28 +225,55 @@ def display_input_option(value):
 
 
 @app.callback(
-    [Output('result-input', 'children'),
+    Output('memory-output', 'data'),
+    [Input('button_input', 'n_clicks')],
+    [State("type_of_input", "value"),
+    State("input_type", "value")])
+def loading_data(n_clicks, flag, value):
+    if n_clicks is None:
+        return None
+    else:
+        if flag == 'Text':
+            pass
+        elif flag == 'Examples':
+            value = nltk.corpus.gutenberg.open(value).read()
+        return value
+
+
+@app.callback([
+    Output('result-input', 'children'),
     Output('result-input-words', 'children'),
     Output('result-input-sents', 'children'),
     Output('result-input-long', 'children'),
     Output('result-input-frequent', 'children')],
-    [Input('button_input', 'n_clicks')],
-    [State("type_of_input", "value"),
-    State("input_type", "value")])
-def display_uploaded_text(n_clicks, flag, value):
-    if n_clicks is None:
-        return 'Waiting for an input ...', 0, 0, None, None
+    [Input('memory-output', 'data')])
+def display_uploaded_text(data):
+    if data is None:
+        raise PreventUpdate
     else:
-        if flag == 'Text':
-            tokenized_words=nltk.word_tokenize(value.lower())
-            tokenized_sentences=nltk.sent_tokenize(value)
-            return dcc.Markdown(value), len(tokenized_words), len(tokenized_sentences), dcc.Markdown(longuest_token(tokenized_words)), None
-        elif flag == 'Examples':
-            corpus = nltk.corpus.gutenberg.open(value).read()
-            tokenized_words=nltk.word_tokenize(corpus.lower())
-            tokenized_sentences=nltk.sent_tokenize(corpus)
-            return dcc.Markdown(corpus), len(tokenized_words), len(tokenized_sentences), dcc.Markdown(longuest_token(tokenized_words)), None
+        tokenized_words=nltk.word_tokenize(data.lower())
+        tokenized_sentences=nltk.sent_tokenize(data)
+        return dcc.Markdown(data), str(len(tokenized_words)), str(len(tokenized_sentences)), dcc.Markdown(longuest_token(tokenized_words)), most_frequent_token(tokenized_words)
 
+
+@app.callback(Output('type_of_input_adv', 'children'),
+    [Input('button_input_adv', 'n_clicks')],
+    [State("actions_adv", "value"),
+    State("memory-output", "data")])
+def render_advanced_analytics(n_clicks, flag, value):
+    if n_clicks is None:
+        return 'Waiting for an input ...'
+    else:
+        if flag == 'WF':
+            tokenized_words=nltk.word_tokenize(value.lower())
+            tmp = FreqDist(tokenized_words)
+            df = pd.DataFrame(tmp.most_common())
+            df.columns = ['Words', 'Frequency']
+            return dash_table.DataTable(
+                id='table',
+                columns=[{"name": i, "id": i} for i in df.columns],
+                data=df.to_dict('records')
+                )
 
 @app.callback(Output('tabs-content', 'children'),
   [Input('tabs', 'value')])
@@ -284,12 +321,28 @@ def render_content(tab):
          ),
     elif tab == 'tab-2':
         return html.Div([
-           html.P(
-            'To be determined',
-            className = 'pretty_container'
-
-            )
-           ])
+         html.Div(
+            [
+            html.P(
+                "Select the actions you want to apply on the text",
+                className="control_label",
+                ),
+            dcc.Dropdown(
+               id='actions_adv',
+               options=[
+               {'label': 'Words Frequency', 'value': 'WF'}
+               ],
+               multi=False,
+               value=None
+               ),
+            html.Button('Submit', id='button_input_adv', style={'float':'right', 'margin-top':'10px'})
+            ],
+            className="pretty_container four columns",
+            ),
+         html.Div(
+            id = 'type_of_input_adv',
+            className="pretty_container eight columns")
+           ], className="row flex-display")
 
     elif tab == 'tab-3':
         return html.Div([

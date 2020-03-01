@@ -67,6 +67,17 @@
   width: calc(100%-40px);
 }
 
+/*.svg-container {
+display: inline-block;
+position: relative;
+width: 100%;
+padding-bottom: 100%;
+vertical-align: middle;
+overflow: hidden;
+}*/
+
+
+
 
 .column,
 .columns {
@@ -234,7 +245,7 @@ h6 {
   font-weight: 300;
 }
 h1 {
-  font-size: 4.5rem;
+  font-size: 8rem;
   line-height: 1.2;
   letter-spacing: -0.1rem;
   margin-bottom: 2rem;
@@ -473,6 +484,20 @@ ol ul {
 li {
   margin-bottom: 1rem;
 }
+
+/* Customize Loading Spinner
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.dash-default-spinner {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  /*padding: 125px;*/
+  /*vertical-align: middle;*/
+}
+
+.dash-default-spinner > div {
+  background-color: #4e5964 !important;
+}
+
 
 /* Tables
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
