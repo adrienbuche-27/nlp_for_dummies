@@ -19,4 +19,6 @@ dropdown_input = [('Text', False),
 				('Examples', False),
 				('Audio', True)]
 
+
+inaugural = nltk.corpus.inaugural.fileids()
 gutenberg = nltk.corpus.gutenberg.fileids()

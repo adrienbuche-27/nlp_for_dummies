@@ -2,7 +2,11 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 
-from nltk.book import FreqDist
+from nltk.book import FreqDist, text1, text6
+from nltk.corpus import stopwords
+stopwords = set(stopwords.words('english'))
+from nltk.tokenize import RegexpTokenizer
+tokenizer = RegexpTokenizer(r'\w+')
 
 def build_modal_info_overlay(id, title, side, content):
     """
@@ -49,3 +53,9 @@ def most_frequent_token(tokens):
 	fdist1 = FreqDist(tokens)
 	most = fdist1.most_common(1)[0]
 	return ' : '.join([most[0], str(most[1])])
+
+def removing_stop_words(tokens):
+	return [word for word in tokens if word not in stopwords]
+
+def removing_punct(text):
+	return tokenizer.tokenize(text)

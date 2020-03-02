@@ -16,7 +16,7 @@ from dash.exceptions import PreventUpdate
 
 import nltk.data
 import nltk.tokenize
-from nltk.book import FreqDist
+# from nltk.book import FreqDist, text1, text6
 
 from extra_info import *
 from helpers import *
@@ -161,22 +161,24 @@ app.layout = html.Div(
        className="row container-display",
        ),
     html.Div(
+        [
+            html.Div(
+                id='range-slider-input',
+                style={'height':'5vh'},
+                className="pretty_container twelve columns"),
+            # html.Div(id='output-container-range-slider')
+        ],className="row flex-display"
+    ),
+    html.Div(
       [
-                # html.Div(
-                #   [
-                #       html.H4('What can we do with this raw text ?')
-                #   ],
-                #   className="pretty_container twelve columns"
-                # ),
-                # html.H1('Dash Tabs component demo'),
-            dcc.Tabs(id="tabs", value='tab-1', children=[
-              dcc.Tab(label='Basic Processing Steps', value='tab-1'),
-              dcc.Tab(label='Advanced Statistics', value='tab-2'),
-              dcc.Tab(label='Grammatical Analysis', value='tab-3')]),
-             html.Div(id='tabs-content')
-             ],
-             className="pretty_container",
-             )
+      dcc.Tabs(id="tabs", value='tab-1', children=[
+        dcc.Tab(label='Basic Processing Steps', value='tab-1'),
+        dcc.Tab(label='Advanced Statistics', value='tab-2'),
+        dcc.Tab(label='Grammatical Analysis', value='tab-3')]),
+      html.Div(id='tabs-content')
+      ],
+      className="pretty_container",
+      )
     ],
     id="mainContainer",
     style={"display": "flex", "flex-direction": "column"},
@@ -216,9 +218,9 @@ def display_input_option(value):
             dcc.Dropdown(
                 id="input_type",
                 options=[
-                {'label' : x.split('.')[0], 'value' : x} for x in gutenberg
+                {'label' : x.split('.')[0], 'value' : x} for x in inaugural
                 ],
-                value=gutenberg[0],
+                value=inaugural[0],
                 className="dcc_control",),
             html.Button('Submit', id='button_input')
             ])
@@ -236,7 +238,8 @@ def loading_data(n_clicks, flag, value):
         if flag == 'Text':
             pass
         elif flag == 'Examples':
-            value = nltk.corpus.gutenberg.open(value).read()
+            value = nltk.corpus.inaugural.raw(value)
+            # value = nltk.corpus.inaugural.open(value).read()
         return value
 
 
@@ -245,7 +248,8 @@ def loading_data(n_clicks, flag, value):
     Output('result-input-words', 'children'),
     Output('result-input-sents', 'children'),
     Output('result-input-long', 'children'),
-    Output('result-input-frequent', 'children')],
+    Output('result-input-frequent', 'children'),
+    Output('range-slider-input','children')],
     [Input('memory-output', 'data')])
 def display_uploaded_text(data):
     if data is None:
@@ -253,8 +257,52 @@ def display_uploaded_text(data):
     else:
         tokenized_words=nltk.word_tokenize(data.lower())
         tokenized_sentences=nltk.sent_tokenize(data)
-        return dcc.Markdown(data), str(len(tokenized_words)), str(len(tokenized_sentences)), dcc.Markdown(longuest_token(tokenized_words)), most_frequent_token(tokenized_words)
+        words = len(tokenized_words)
+        sents = len(tokenized_sentences)
+        
+        if sents <= 10:
+            range_marks = {0: {'label': 'First Sentence', 'style': {'margin-left': '35px', 'text-align': 'rigth', 'width': '200px'}},
+                            sents: {'label': 'Last Sentence [{}]'.format(sents), 'style': {'margin-rigth': '50px', 'text-align': 'left', 'width': '200px'}}}
+        else:
+            range_marks = {0: {'label': 'First Sentence', 'style': {'margin-left': '35px', 'text-align': 'rigth', 'width': '200px'}},
+                        int(sents*0.25): {'label': '25% [{}]'.format(int(sents*0.25))}, #'style': {'margin-left': '35px', 'text-align': 'rigth', 'width': '200px'},
+                        int(sents*0.5): {'label': '50% [{}]'.format(int(sents*0.5))}, #'style': {'margin-left': '35px', 'text-align': 'rigth', 'width': '200px'},
+                        int(sents*0.75): {'label': '75% [{}]'.format(int(sents*0.75))}, #'style': {'margin-left': '35px', 'text-align': 'rigth', 'width': '200px'},
+                        sents: {'label': 'Last Sentence [{}]'.format(sents), 'style': {'margin-rigth': '50px', 'text-align': 'left', 'width': '200px'}}}
+        
+        range_slider = dcc.RangeSlider(
+            id='my-range-slider',
+            min=0,
+            max=sents,
+            step=1,
+            value=[0, sents],
+            marks= range_marks,
+            className="dcc_control")
 
+        return dcc.Markdown(data), str(words), str(sents) , dcc.Markdown(longuest_token(tokenized_words)), most_frequent_token(tokenized_words), range_slider
+
+@app.callback(
+    dash.dependencies.Output('output-container-range-slider', 'children'),
+    [dash.dependencies.Input('my-range-slider', 'value')])
+def update_output_slider(value):
+    return 'You have selected "{}"'.format(value)
+
+@app.callback(Output('type_of_input_act', 'children'),
+    [Input('button_input_act', 'n_clicks')],
+    [State("actions", "value"),
+    State("memory-output", "data")])
+def render_basic_action(n_clicks, flags, value):
+    if n_clicks is None:
+        return ''
+    else:
+        tmp = nltk.word_tokenize(value)
+        for action in flags:
+            if action == 'stopwords':
+                tmp = removing_stop_words(tmp)
+            elif action == 'punctuations':
+                tmp = ' '.join(tmp)
+                tmp = removing_punct(tmp)
+        return dcc.Markdown(' '.join(tmp))
 
 @app.callback(Output('type_of_input_adv', 'children'),
     [Input('button_input_adv', 'n_clicks')],
@@ -262,7 +310,7 @@ def display_uploaded_text(data):
     State("memory-output", "data")])
 def render_advanced_analytics(n_clicks, flag, value):
     if n_clicks is None:
-        return 'Waiting for an input ...'
+        return ''
     else:
         if flag == 'WF':
             tokenized_words=nltk.word_tokenize(value.lower())
@@ -272,7 +320,11 @@ def render_advanced_analytics(n_clicks, flag, value):
             return dash_table.DataTable(
                 id='table',
                 columns=[{"name": i, "id": i} for i in df.columns],
-                data=df.to_dict('records')
+                data=df.to_dict('records'),
+                style_table={
+                            'maxHeight': '300px',
+                            'overflowY': 'scroll'
+                        }
                 )
 
 @app.callback(Output('tabs-content', 'children'),
@@ -291,31 +343,25 @@ def render_content(tab):
                id='actions',
                options=[
                {'label': 'Removing Stop Words', 'value': 'stopwords'},
+               {'label': 'Removing Punctuations', 'value': 'punctuations'},
                {'label': 'Lemmatization', 'value': 'lemma'},
                {'label': 'Stemming', 'value': 'stem'}
                ],
                multi=True,
                value=None
                ),
+            html.Button('Submit', id='button_input_act', style={'float':'right', 'margin-top':'10px'}),
             html.P(
                 "!! Order of selection can impact the final outcome !!",
                 className="control_label",
-                ),
+            )
             ],
             className="pretty_container four columns",
             ),
-         html.Div(
-             [
-             html.H4('Results'),
-             dcc.Textarea(
-               id='input_type_2',
-               placeholder='Enter a value...',
-               value='Please, enter your text here.',
-               style={'width': '100%'}
-               )
-             ],
-             className="pretty_container eight columns",
-             )
+            html.Div(
+                dcc.Loading(id = 'type_of_input_act', style = {"padding": "25px"}),
+                style = {"height" : "25vh", "overflow-y": "scroll"},
+                className="pretty_container eight columns")
          ],
          className="row flex-display",
          ),
@@ -340,7 +386,7 @@ def render_content(tab):
             className="pretty_container four columns",
             ),
          html.Div(
-            id = 'type_of_input_adv',
+            dcc.Loading(id = 'type_of_input_adv', style = {"padding": "25px"}),
             className="pretty_container eight columns")
            ], className="row flex-display")
 
